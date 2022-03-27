@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/main
+    username: main
+    password: main
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+application:
+  video_url_prefix: "https://video.singing4peace.de/"
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - "health"
+          - "prometheus"
+
