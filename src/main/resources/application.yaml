@@ -9,7 +9,9 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
 application:
-  video_url_prefix: "https://video.singing4peace.de/"
+  video-url-prefix: "https://video.singing4peace.de/"
+  video-output-folder: "/data/output"
+  video-library: "/data/library"
 
 
 management:
