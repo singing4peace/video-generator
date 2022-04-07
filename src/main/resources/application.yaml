@@ -7,11 +7,16 @@ spring:
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  minio:
+    url: http://localhost:9000
+    bucket: main
+    create-bucket: true
+    access-key: minioadmin
+    secret-key: minioadmin
 
 application:
   video-url-prefix: "https://video.singing4peace.de/"
-  video-output-folder: "/data/output"
-  video-library: "/data/library"
+  audio-file-path: "/data/audio.mp3"
 
 
 management:

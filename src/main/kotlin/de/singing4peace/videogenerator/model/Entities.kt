@@ -6,8 +6,17 @@ import javax.persistence.*
 class GeneratedVideo(
     @Id
     var id: String,
+    var audioStartTime: Int,
     @OneToMany(cascade = [CascadeType.ALL])
-    var segments: List<VideoTrack>,
+    var segments: List<CutVideoTrack>,
+)
+
+@Entity
+class CutVideoTrack(
+    var length: Long,
+    @ManyToOne
+    var videoTrack: VideoTrack,
+    @Id @GeneratedValue var id: Long? = null
 )
 
 @Entity

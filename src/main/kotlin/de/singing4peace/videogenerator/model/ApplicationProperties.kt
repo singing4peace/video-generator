@@ -6,5 +6,5 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConstructorBinding
 @ConfigurationProperties(prefix = "application")
 data class ApplicationProperties(
-    val videoUrlPrefix: String, val videoOutputFolder: String, val videoLibrary: String
+    val videoUrlPrefix: String, val audioFilePath: String
 )
