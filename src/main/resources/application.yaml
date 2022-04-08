@@ -17,6 +17,11 @@ spring:
 application:
   video-url-prefix: "https://video.singing4peace.de/"
   audio-file-path: "/data/audio.mp3"
+  # Video length in s
+  audio-length: 300
+  segment-length: 15
+  silence-before: 5
+  silence-after: 5
 
 
 management:

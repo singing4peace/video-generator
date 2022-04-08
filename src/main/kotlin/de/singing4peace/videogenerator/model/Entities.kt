@@ -13,6 +13,7 @@ class GeneratedVideo(
 
 @Entity
 class CutVideoTrack(
+    var offset: Long,
     var length: Long,
     @ManyToOne
     var videoTrack: VideoTrack,
