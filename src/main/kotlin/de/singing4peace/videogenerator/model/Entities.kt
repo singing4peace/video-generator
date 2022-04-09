@@ -13,7 +13,7 @@ class GeneratedVideo(
 
 @Entity
 class CutVideoTrack(
-    var offset: Long,
+    var start: Long,
     var length: Long,
     @ManyToOne
     var videoTrack: VideoTrack,
@@ -22,6 +22,7 @@ class CutVideoTrack(
 
 @Entity
 class Recording(
+    @Column(unique = true)
     var organization: String,
     var languageCode: String,
     @Id @GeneratedValue var id: Long? = null
@@ -31,6 +32,7 @@ class Recording(
 class VideoTrack(
     var length: Int,
     var start: Int,
+    var fileName: String,
     var cameraAngle: CameraAngle,
     @ManyToOne
     var recording: Recording,
