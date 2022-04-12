@@ -1,6 +1,5 @@
 package de.singing4peace.videogenerator.access
 
-import de.singing4peace.videogenerator.model.ApplicationProperties
 import net.bramp.ffmpeg.FFmpeg
 import net.bramp.ffmpeg.FFmpegExecutor
 import net.bramp.ffmpeg.FFprobe
@@ -19,6 +18,20 @@ class FfmpegVideoCutter : VideoCutter {
     // Paths on alpine linux which we use in the docker container
     val ffmpeg = FFmpeg("/usr/bin/ffmpeg")
     val ffprobe = FFprobe("/usr/bin/ffprobe")
+
+    override fun convertToFormat(inputFile: File, outputFile: File, codec: String, resolution: String, fps: Int) {
+        val builder = FFmpegBuilder()
+            .addInput(inputFile.absolutePath)
+            .addOutput(outputFile.absolutePath)
+            .setVideoCodec(codec)
+            .setVideoResolution(resolution)
+            .setVideoFrameRate(fps, 1)
+            .setStrict(FFmpegBuilder.Strict.NORMAL).done()
+
+        val executor = FFmpegExecutor(ffmpeg, ffprobe)
+        val job = executor.createJob(builder)
+        job.run()
+    }
 
     @Throws(IOException::class)
     override fun concatenate(tracks: List<String>): File {

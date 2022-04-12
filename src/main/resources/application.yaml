@@ -15,9 +15,11 @@ spring:
     secret-key: minioadmin
 
 application:
-  video-url-prefix: "https://video.singing4peace.de/"
+
+  youtube-stream-key: stream-key
   audio-file-path: "/data/audio.mp3"
   video-library: "/data/videos"
+  intro: false
   # Video length in s
   audio-length: 300
   segment-length: 15

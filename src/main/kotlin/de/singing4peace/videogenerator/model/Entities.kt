@@ -1,12 +1,12 @@
 package de.singing4peace.videogenerator.model
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import javax.persistence.*
 
 @Entity
 class GeneratedVideo(
     @Id
     var id: String,
-    var audioStartTime: Int,
     @OneToMany(cascade = [CascadeType.ALL])
     var segments: List<CutVideoTrack>,
 )
@@ -21,10 +21,11 @@ class CutVideoTrack(
 )
 
 @Entity
-class Recording(
+class Ensemble(
     @Column(unique = true)
-    var organization: String,
+    var name: String,
     var languageCode: String,
+    @JsonIgnore
     @Id @GeneratedValue var id: Long? = null
 )
 
@@ -35,7 +36,7 @@ class VideoTrack(
     var fileName: String,
     var cameraAngle: CameraAngle,
     @ManyToOne
-    var recording: Recording,
+    var ensemble: Ensemble,
     @Id @GeneratedValue var id: Long? = null
 )
 
