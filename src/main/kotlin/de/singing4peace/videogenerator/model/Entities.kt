@@ -31,7 +31,6 @@ class Ensemble(
 
 @Entity
 class VideoTrack(
-    var length: Int,
     var start: Int,
     var fileName: String,
     var cameraAngle: CameraAngle,

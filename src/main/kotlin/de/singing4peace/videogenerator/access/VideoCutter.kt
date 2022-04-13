@@ -1,15 +1,25 @@
 package de.singing4peace.videogenerator.access
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 interface VideoCutter {
 
+
     /**
-     * Converts an input file to a h264, 60fps, 1920x1080 resolution video and outputs it to the output file.
+     * Determines the length of a video file in seconds
      */
-    fun convertToMp4H264FullHd60FPS(inputFile: File, outputFile: File) {
-        convertToFormat(inputFile, outputFile, "libx264", "1920x1080", 60)
-    }
+    fun getDurationOfFile(inputFile: File): Double
+
+    /**
+     * Splits the input file into segments with the specified segment length
+     */
+    fun cutFile(inputFile: File, outputFile: File, start: Long = 0, duration: Long?, timeUnit: TimeUnit = TimeUnit.SECONDS)
+
+    /**
+     * Splits the input file into segments with the specified segment length
+     */
+    fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int)
 
     /**
      * Converts an input file to an output file with the specified codec, resolution and fps.
@@ -27,4 +37,12 @@ interface VideoCutter {
      * an additional offset in seconds can be specified.
      */
     fun replaceAudio(videoFile: File, audioFile: File, offset: Long = 0): File
+
+    /**
+     * Converts an input file to a h264, 60fps, 1920x1080 resolution video and outputs it to the output file.
+     */
+    fun convertToMp4H264FullHd60FPS(inputFile: File, outputFile: File) {
+        convertToFormat(inputFile, outputFile, "libx264", "1920x1080", 60)
+    }
+
 }

@@ -15,14 +15,13 @@ spring:
     secret-key: minioadmin
 
 application:
-
   youtube-stream-key: stream-key
   audio-file-path: "/data/audio.mp3"
   video-library: "/data/videos"
-  intro: false
-  # Video length in s
-  audio-length: 300
-  segment-length: 15
+  cache-directory: "/data/cache"
+  intro-file-name: "intro.mp4"
+  outro-file-name: "outro.mp4"
+  segment-length: 10
   silence-before: 5
   silence-after: 5
 

@@ -10,6 +10,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 @Component
@@ -18,6 +19,50 @@ class FfmpegVideoCutter : VideoCutter {
     // Paths on alpine linux which we use in the docker container
     val ffmpeg = FFmpeg("/usr/bin/ffmpeg")
     val ffprobe = FFprobe("/usr/bin/ffprobe")
+    override fun getDurationOfFile(inputFile: File): Double {
+        val result = ffprobe.probe(inputFile.absolutePath)
+        var longest = 0.0
+        for (stream in result.streams) {
+            if (stream.duration > longest) {
+                longest = stream.duration
+            }
+        }
+
+        return longest
+    }
+
+    override fun cutFile(inputFile: File, outputFile: File, start: Long, duration: Long?, timeUnit: TimeUnit) {
+        val outputBuilder = FFmpegBuilder()
+            .setStartOffset(start, timeUnit)
+            .addInput(inputFile.absolutePath)
+            .addOutput(outputFile.absolutePath)
+            .setVideoCodec("copy")
+            .setStrict(FFmpegBuilder.Strict.NORMAL)
+
+        if (duration != null) {
+            outputBuilder.setDuration(duration, timeUnit)
+        }
+
+        val builder = outputBuilder.done()
+
+        val executor = FFmpegExecutor(ffmpeg, ffprobe)
+        val job = executor.createJob(builder)
+        job.run()
+    }
+
+    override fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int) {
+        val builder = FFmpegBuilder()
+            .addInput(inputFile.absolutePath)
+            .addOutput(outputFileNameTemplate)
+            .setVideoCodec("copy")
+            .addExtraArgs("-segment_time", "00:00:$segmentLength")
+            .setFormat("segment")
+            .setStrict(FFmpegBuilder.Strict.NORMAL).done()
+
+        val executor = FFmpegExecutor(ffmpeg, ffprobe)
+        val job = executor.createJob(builder)
+        job.run()
+    }
 
     override fun convertToFormat(inputFile: File, outputFile: File, codec: String, resolution: String, fps: Int) {
         val builder = FFmpegBuilder()
@@ -46,7 +91,7 @@ class FfmpegVideoCutter : VideoCutter {
         }
 
         val inputFile = File("/tmp", UUID.randomUUID().toString() + ".txt")
-        inputFile.createNewFile();
+        inputFile.createNewFile()
         Files.writeString(Paths.get(inputFile.toURI()), inputFileContent.toString())
 
         // Concatenate videos
