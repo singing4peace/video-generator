@@ -54,9 +54,7 @@ services:
       - SPRING_MINIO_SECRET-KEY=${STORAGE_PASSWORD}
     labels:
       - traefik.enable=true
-      - traefik.http.routers.service.service=image
       - traefik.http.routers.service.rule=Host(`api.singing4peace.de`)
-      - traefik.http.services.service.loadbalancer.server.port=8080
       - traefik.http.routers.service.tls=true
       - traefik.http.routers.service.tls.certresolver=myresolver
 

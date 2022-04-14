@@ -8,7 +8,7 @@ class GeneratedVideo(
     @Id
     var id: String,
     @OneToMany(cascade = [CascadeType.ALL])
-    var segments: List<CutVideoTrack>,
+    var segments: List<VideoTrack>,
 )
 
 @Entity
@@ -31,7 +31,7 @@ class Ensemble(
 
 @Entity
 class VideoTrack(
-    var start: Int,
+    var start: Double,
     var fileName: String,
     var cameraAngle: CameraAngle,
     @ManyToOne

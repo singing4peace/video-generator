@@ -17,7 +17,8 @@ interface VideoCutter {
     fun cutFile(inputFile: File, outputFile: File, start: Long = 0, duration: Long?, timeUnit: TimeUnit = TimeUnit.SECONDS)
 
     /**
-     * Splits the input file into segments with the specified segment length
+     * Splits the input file into segments with the specified segment length. The outputFileNameTemplate gets formatted
+     * with String.format() and an Int as input
      */
     fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int)
 
@@ -36,7 +37,7 @@ interface VideoCutter {
      * Replaces the complete audio in the videoFile with the on from the audioFile
      * an additional offset in seconds can be specified.
      */
-    fun replaceAudio(videoFile: File, audioFile: File, offset: Long = 0): File
+    fun replaceAudio(videoFile: File, audioFile: File, offset: Double = 0.0): File
 
     /**
      * Converts an input file to a h264, 60fps, 1920x1080 resolution video and outputs it to the output file.

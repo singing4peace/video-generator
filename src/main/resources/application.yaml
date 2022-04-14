@@ -16,7 +16,7 @@ spring:
 
 application:
   youtube-stream-key: stream-key
-  audio-file-path: "/data/audio.mp3"
+  audio-file-name: "audio.mp3"
   video-library: "/data/videos"
   cache-directory: "/data/cache"
   intro-file-name: "intro.mp4"

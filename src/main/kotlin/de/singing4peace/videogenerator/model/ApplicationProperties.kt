@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConstructorBinding
 @ConstructorBinding
 @ConfigurationProperties(prefix = "application")
 data class ApplicationProperties(
-    val youtubeStreamKey: String, val audioFilePath: String, val videoLibrary: String,
+    val youtubeStreamKey: String, val audioFileName: String, val videoLibrary: String,
     val cacheDirectory: String, val introFileName: String, val outroFileName: String,
     val segmentLength: Int, val silenceBefore: Int, val silenceAfter: Int
 )

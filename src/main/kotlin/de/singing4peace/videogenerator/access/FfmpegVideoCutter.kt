@@ -11,6 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.math.floor
 
 
 @Component
@@ -19,6 +20,7 @@ class FfmpegVideoCutter : VideoCutter {
     // Paths on alpine linux which we use in the docker container
     val ffmpeg = FFmpeg("/usr/bin/ffmpeg")
     val ffprobe = FFprobe("/usr/bin/ffprobe")
+
     override fun getDurationOfFile(inputFile: File): Double {
         val result = ffprobe.probe(inputFile.absolutePath)
         var longest = 0.0
@@ -51,17 +53,23 @@ class FfmpegVideoCutter : VideoCutter {
     }
 
     override fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int) {
-        val builder = FFmpegBuilder()
-            .addInput(inputFile.absolutePath)
-            .addOutput(outputFileNameTemplate)
-            .setVideoCodec("copy")
-            .addExtraArgs("-segment_time", "00:00:$segmentLength")
-            .setFormat("segment")
-            .setStrict(FFmpegBuilder.Strict.NORMAL).done()
+        val duration = getDurationOfFile(inputFile)
+        // We use toInt as we want no segment to be shorter than the segment length,
+        // So that in some cases the last segment has length: segmentLength + remaining (remaining < segmentLength)
+        val segments = (duration / segmentLength).toInt()
 
-        val executor = FFmpegExecutor(ffmpeg, ffprobe)
-        val job = executor.createJob(builder)
-        job.run()
+        for (i in 0 until segments) {
+            val outputFileName = outputFileNameTemplate.format(i)
+
+            val seekingTime = i * segmentLength
+
+            // We have not yet reached the last segment
+            if (i < segments - 1) {
+                cutFile(inputFile, File(outputFileName), seekingTime.toLong(), segmentLength.toLong())
+            } else {
+                cutFile(inputFile, File(outputFileName), seekingTime.toLong(), null)
+            }
+        }
     }
 
     override fun convertToFormat(inputFile: File, outputFile: File, codec: String, resolution: String, fps: Int) {
@@ -107,7 +115,7 @@ class FfmpegVideoCutter : VideoCutter {
         return output
     }
 
-    override fun replaceAudio(videoFile: File, audioFile: File, offset: Long): File {
+    override fun replaceAudio(videoFile: File, audioFile: File, offset: Double): File {
         val output = File("/tmp", UUID.randomUUID().toString() + ".mp4")
 
         val builder = FFmpegBuilder()
