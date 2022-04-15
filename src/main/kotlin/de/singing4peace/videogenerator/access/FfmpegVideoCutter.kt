@@ -23,22 +23,15 @@ class FfmpegVideoCutter : VideoCutter {
 
     override fun getDurationOfFile(inputFile: File): Double {
         val result = ffprobe.probe(inputFile.absolutePath)
-        var longest = 0.0
-        for (stream in result.streams) {
-            if (stream.duration > longest) {
-                longest = stream.duration
-            }
-        }
 
-        return longest
+        return result.format.duration
     }
 
     override fun cutFile(inputFile: File, outputFile: File, start: Long, duration: Long?, timeUnit: TimeUnit) {
         val outputBuilder = FFmpegBuilder()
-            .setStartOffset(start, timeUnit)
             .addInput(inputFile.absolutePath)
             .addOutput(outputFile.absolutePath)
-            .setVideoCodec("copy")
+            .setStartOffset(start, timeUnit)
             .setStrict(FFmpegBuilder.Strict.NORMAL)
 
         if (duration != null) {
@@ -52,7 +45,7 @@ class FfmpegVideoCutter : VideoCutter {
         job.run()
     }
 
-    override fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int) {
+    override fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int, offset: Double) {
         val duration = getDurationOfFile(inputFile)
         // We use toInt as we want no segment to be shorter than the segment length,
         // So that in some cases the last segment has length: segmentLength + remaining (remaining < segmentLength)
@@ -61,13 +54,13 @@ class FfmpegVideoCutter : VideoCutter {
         for (i in 0 until segments) {
             val outputFileName = outputFileNameTemplate.format(i)
 
-            val seekingTime = i * segmentLength
+            val seekingTime = i * segmentLength * 1000 + offset * 1000
 
             // We have not yet reached the last segment
             if (i < segments - 1) {
-                cutFile(inputFile, File(outputFileName), seekingTime.toLong(), segmentLength.toLong())
+                cutFile(inputFile, File(outputFileName), seekingTime.toLong(), segmentLength.toLong() * 1000, TimeUnit.MILLISECONDS)
             } else {
-                cutFile(inputFile, File(outputFileName), seekingTime.toLong(), null)
+                cutFile(inputFile, File(outputFileName), seekingTime.toLong(), null, TimeUnit.MILLISECONDS)
             }
         }
     }
@@ -103,8 +96,12 @@ class FfmpegVideoCutter : VideoCutter {
         Files.writeString(Paths.get(inputFile.toURI()), inputFileContent.toString())
 
         // Concatenate videos
-        val builder = FFmpegBuilder().setFormat("concat").addInput(inputFile.absolutePath).addExtraArgs("-safe", "0").addOutput(output.absolutePath)
-            .setVideoCodec("libx264").addExtraArgs("-c", "copy").done()
+        val builder = FFmpegBuilder().setFormat("concat")
+            .addInput(inputFile.absolutePath)
+            .addExtraArgs("-safe", "0")
+            .addOutput(output.absolutePath)
+            .addExtraArgs("-c", "copy")
+            .done()
 
         val executor = FFmpegExecutor(ffmpeg, ffprobe)
         val job = executor.createJob(builder)

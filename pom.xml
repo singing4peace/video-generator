@@ -46,17 +46,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.jlefebure</groupId>
-            <artifactId>spring-boot-starter-minio</artifactId>
-            <version>1.10</version>
-        </dependency>
-        <dependency>
-            <groupId>io.minio</groupId>
-            <artifactId>minio</artifactId>
-            <version>8.1.0</version>
-        </dependency>
-
-        <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
             <scope>runtime</scope>

@@ -7,13 +7,31 @@ import org.springframework.stereotype.Component
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 @Component
 class VideoManager(
     val generatedVideoRepository: GeneratedVideoRepository,
+    val videoTrackRepository: VideoTrackRepository,
     val properties: ApplicationProperties,
     val cutter: VideoCutter,
 ) {
+
+    fun generateVideo(): File {
+        val audioFile = File(properties.videoLibrary, properties.audioFileName)
+        val audioLength = cutter.getDurationOfFile(audioFile)
+
+        val neededSegments = (audioLength / properties.segmentLength).toInt()
+        val tracks = mutableListOf<VideoTrack>()
+        val trackCount = videoTrackRepository.count()
+        for (i in 0 until neededSegments) {
+            val trackIndex = Random.nextInt(0, trackCount.toInt())
+            tracks.add(videoTrackRepository.getById(trackIndex.toLong()))
+        }
+
+        val generatedVideo = GeneratedVideo(UUID.randomUUID().toString(), tracks)
+        return generateVideo(generatedVideo)
+    }
 
     fun generateVideo(generatedVideo: GeneratedVideo): File {
         val cacheDir = File(properties.cacheDirectory)
@@ -38,13 +56,12 @@ class VideoManager(
 
         val concatenated = cutter.concatenate(tracks)
         val concatenatedLength = cutter.getDurationOfFile(concatenated)
-        val firstTrackAudioStart = generatedVideo.segments.first().start
-        val withAudio = cutter.replaceAudio(concatenated, audioFile, firstTrackAudioStart)
+        val withAudio = cutter.replaceAudio(concatenated, audioFile, 0.0)
 
-        val tmp = File("/tmp", UUID.randomUUID().toString())
-        val offsetTime = (introLength - properties.silenceBefore - firstTrackAudioStart).coerceAtLeast(0.0)
-        val duration = concatenatedLength - offsetTime - (outroLength - properties.silenceAfter)
-        cutter.cutFile(withAudio, tmp, (offsetTime * 1000).toLong(), duration.toLong() * 1000, TimeUnit.MILLISECONDS)
+        val tmp = File("/tmp", UUID.randomUUID().toString() + ".mp4")
+        val offsetTime = (introLength - properties.silenceBefore).coerceAtLeast(0.0)
+        val duration = audioLength - (outroLength - properties.silenceAfter)
+        cutter.cutFile(withAudio, tmp, 0, duration.toLong() * 1000, TimeUnit.MILLISECONDS)
 
         val output = cutter.concatenate(listOf(introFile, tmp, outroFile).map { file ->
             file.absolutePath
@@ -64,13 +81,14 @@ class VideoManager(
 
         if (!formattedFile.exists() || !formattedFile.isFile) {
             val original = File(properties.videoLibrary, track.fileName)
-            cutter.convertToMp4H264FullHd60FPS(original, formattedFile)
+            cutter.convertToH265FullHd60FPS(original, formattedFile)
         }
 
         val segmentDir = File(cacheDir, track.id.toString())
         if (!segmentDir.exists() || !segmentDir.isDirectory) {
+            segmentDir.mkdirs()
             val template = segmentDir.absolutePath + "/%d.mp4"
-            cutter.splitIntoSegments(formattedFile, template, properties.segmentLength)
+            cutter.splitIntoSegments(formattedFile, template, properties.segmentLength, track.start)
         }
     }
 }

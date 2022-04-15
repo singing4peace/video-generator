@@ -21,6 +21,7 @@ application:
   cache-directory: "/data/cache"
   intro-file-name: "intro.mp4"
   outro-file-name: "outro.mp4"
+  audio-prelude-duration: 8.045
   segment-length: 10
   silence-before: 5
   silence-after: 5

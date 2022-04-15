@@ -20,7 +20,12 @@ interface VideoCutter {
      * Splits the input file into segments with the specified segment length. The outputFileNameTemplate gets formatted
      * with String.format() and an Int as input
      */
-    fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int)
+    fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int) {
+        splitIntoSegments(inputFile, outputFileNameTemplate, segmentLength, 0.0)
+    }
+
+    fun splitIntoSegments(inputFile: File, outputFileNameTemplate: String, segmentLength: Int, offset: Double)
+
 
     /**
      * Converts an input file to an output file with the specified codec, resolution and fps.
@@ -40,10 +45,10 @@ interface VideoCutter {
     fun replaceAudio(videoFile: File, audioFile: File, offset: Double = 0.0): File
 
     /**
-     * Converts an input file to a h264, 60fps, 1920x1080 resolution video and outputs it to the output file.
+     * Converts an input file to a h265, 60fps, 1920x1080 resolution video and outputs it to the output file.
      */
-    fun convertToMp4H264FullHd60FPS(inputFile: File, outputFile: File) {
-        convertToFormat(inputFile, outputFile, "libx264", "1920x1080", 60)
+    fun convertToH265FullHd60FPS(inputFile: File, outputFile: File) {
+        convertToFormat(inputFile, outputFile, "libx265", "1920x1080", 60)
     }
 
 }
