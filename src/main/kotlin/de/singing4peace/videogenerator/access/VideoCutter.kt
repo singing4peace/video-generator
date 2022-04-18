@@ -11,10 +11,10 @@ interface VideoCutter {
      */
     fun getDurationOfFile(inputFile: File): Double
 
-    /**
-     * Splits the input file into segments with the specified segment length
-     */
+
     fun cutFile(inputFile: File, outputFile: File, start: Long = 0, duration: Long?, timeUnit: TimeUnit = TimeUnit.SECONDS)
+
+    fun cutFileFast(inputFile: File, outputFile: File, start: Long = 0, duration: Long?, timeUnit: TimeUnit = TimeUnit.SECONDS)
 
     /**
      * Splits the input file into segments with the specified segment length. The outputFileNameTemplate gets formatted
@@ -31,7 +31,7 @@ interface VideoCutter {
      * Converts an input file to an output file with the specified codec, resolution and fps.
      * The actcual format will be inferred from the output file name
      */
-    fun convertToFormat(inputFile: File, outputFile: File, codec: String, resolution: String, fps: Int)
+    fun convertToFormat(inputFile: File, outputFile: File, codec: String, resolution: String, pixelFormat: String, fps: Int)
 
     /**
      * Concatenates all video files in the list. All the files have to have the same format
@@ -45,10 +45,12 @@ interface VideoCutter {
     fun replaceAudio(videoFile: File, audioFile: File, offset: Double = 0.0): File
 
     /**
-     * Converts an input file to a h265, 60fps, 1920x1080 resolution video and outputs it to the output file.
+     * Converts an input file to a h264, 60fps, 1920x1080 resolution video and outputs it to the output file.
      */
-    fun convertToH265FullHd60FPS(inputFile: File, outputFile: File) {
-        convertToFormat(inputFile, outputFile, "libx265", "1920x1080", 60)
+    fun convertToH264FullHd60FPS(inputFile: File, outputFile: File) {
+        convertToFormat(inputFile, outputFile, "libx264", "1920x1080", "yuv420p",60)
     }
+
+    fun streamToYouTube(generatedFile: File, streamKey: String);
 
 }

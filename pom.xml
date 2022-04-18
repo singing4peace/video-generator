@@ -8,15 +8,18 @@
 		<version>2.6.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
+
 	<groupId>de.singing4peace</groupId>
 	<artifactId>video-generator</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>video-generator</name>
 	<description>video-generator</description>
+
 	<properties>
 		<java.version>17</java.version>
 		<kotlin.version>1.6.10</kotlin.version>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -38,6 +41,12 @@
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-stdlib-jdk8</artifactId>
 		</dependency>
+
+        <dependency>
+            <groupId>io.github.microutils</groupId>
+            <artifactId>kotlin-logging-jvm</artifactId>
+            <version>2.1.20</version>
+        </dependency>
 
         <dependency>
             <groupId>net.bramp.ffmpeg</groupId>
@@ -77,6 +86,11 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlinx</groupId>
+            <artifactId>kotlinx-coroutines-core</artifactId>
+            <version>1.6.1</version>
         </dependency>
     </dependencies>
 

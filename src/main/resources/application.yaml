@@ -19,12 +19,11 @@ application:
   audio-file-name: "audio.mp3"
   video-library: "/data/videos"
   cache-directory: "/data/cache"
-  intro-file-name: "intro.mp4"
-  outro-file-name: "outro.mp4"
-  audio-prelude-duration: 8.045
+  intro-file-name: "intro-new.mp4"
+  outro-file-name: "outro-new.mp4"
+  audio-prelude-duration: 7.8
   segment-length: 10
-  silence-before: 5
-  silence-after: 5
+  outro-offset: -5
 
 
 management:

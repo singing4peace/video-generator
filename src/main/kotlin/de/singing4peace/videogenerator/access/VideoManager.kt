@@ -1,36 +1,63 @@
 package de.singing4peace.videogenerator.access
 
+import com.google.common.base.Preconditions
 import de.singing4peace.videogenerator.model.ApplicationProperties
 import de.singing4peace.videogenerator.model.GeneratedVideo
 import de.singing4peace.videogenerator.model.VideoTrack
 import org.springframework.stereotype.Component
 import java.io.File
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.math.ceil
 import kotlin.random.Random
 
 @Component
 class VideoManager(
-    val generatedVideoRepository: GeneratedVideoRepository,
     val videoTrackRepository: VideoTrackRepository,
     val properties: ApplicationProperties,
     val cutter: VideoCutter,
 ) {
 
-    fun generateVideo(): File {
+    fun gatherGeneratedVideo(): GeneratedVideo {
         val audioFile = File(properties.videoLibrary, properties.audioFileName)
         val audioLength = cutter.getDurationOfFile(audioFile)
 
-        val neededSegments = (audioLength / properties.segmentLength).toInt()
+        val introLength = cutter.getDurationOfFile(File(properties.videoLibrary, properties.introFileName))
+
+        val remainingIntroLength = (properties.audioPreludeDuration - introLength).coerceAtLeast(0.0)
+        val neededSegmentsBefore = ceil(remainingIntroLength / properties.segmentLength.toDouble()).toInt()
+
+        val neededSegmentsAfter = ceil((audioLength - properties.audioPreludeDuration) / properties.segmentLength).toInt()
         val tracks = mutableListOf<VideoTrack>()
-        val trackCount = videoTrackRepository.count()
-        for (i in 0 until neededSegments) {
-            val trackIndex = Random.nextInt(0, trackCount.toInt())
-            tracks.add(videoTrackRepository.getById(trackIndex.toLong()))
+
+        if (neededSegmentsBefore > 0) {
+            val potentialVideosBefore =
+                videoTrackRepository.findAllByGeneratedSegmentsAndGeneratedTemplateAndSegmentsBeforeAudioStartIsGreaterThanEqual(
+                    generatedSegments = true,
+                    generatedTemplate = true,
+                    segmentsBeforeAudioStart = neededSegmentsBefore
+                )
+
+            for (i in 0 until neededSegmentsBefore) {
+                val trackIndex = Random.nextInt(0, potentialVideosBefore.size)
+                tracks.add(potentialVideosBefore[trackIndex])
+
+
+            }
         }
 
-        val generatedVideo = GeneratedVideo(UUID.randomUUID().toString(), tracks)
-        return generateVideo(generatedVideo)
+        val potentialVideosAfter = videoTrackRepository.findAllByGeneratedSegmentsAndGeneratedTemplateAndSegmentsBeforeAudioStartIsGreaterThanEqual(
+            generatedSegments = true,
+            generatedTemplate = true,
+            segmentsBeforeAudioStart = 0
+        )
+        for (i in 0 until neededSegmentsAfter) {
+            val trackIndex = Random.nextInt(0, potentialVideosAfter.size)
+            tracks.add(potentialVideosAfter[trackIndex])
+        }
+
+
+        return GeneratedVideo(UUID.randomUUID().toString(), neededSegmentsBefore, tracks)
     }
 
     fun generateVideo(generatedVideo: GeneratedVideo): File {
@@ -43,52 +70,73 @@ class VideoManager(
         val outroLength = cutter.getDurationOfFile(outroFile)
 
         val audioFile = File(properties.videoLibrary, properties.audioFileName)
-        val audioLength = cutter.getDurationOfFile(audioFile)
 
-        // Check all versions
-        generatedVideo.segments.forEach(::checkCachedVersions)
+        assert(outroLength > -properties.outroOffset)
 
         val tracks = mutableListOf<String>()
         for ((i, track) in generatedVideo.segments.withIndex()) {
-            val file = File(cacheDir, "${track.id}/$i.mp4")
+            val index = i + track.segmentsBeforeAudioStart - generatedVideo.segmentsBeforeAudioStart
+            val file = File(cacheDir, "${track.id}/$index.mp4")
             tracks.add(file.absolutePath)
         }
 
         val concatenated = cutter.concatenate(tracks)
         val concatenatedLength = cutter.getDurationOfFile(concatenated)
-        val withAudio = cutter.replaceAudio(concatenated, audioFile, 0.0)
 
         val tmp = File("/tmp", UUID.randomUUID().toString() + ".mp4")
-        val offsetTime = (introLength - properties.silenceBefore).coerceAtLeast(0.0)
-        val duration = audioLength - (outroLength - properties.silenceAfter)
-        cutter.cutFile(withAudio, tmp, 0, duration.toLong() * 1000, TimeUnit.MILLISECONDS)
+        cutter.cutFileFast(concatenated, tmp, 0, (concatenatedLength + properties.outroOffset).toLong() * 1000, TimeUnit.MILLISECONDS)
 
         val output = cutter.concatenate(listOf(introFile, tmp, outroFile).map { file ->
             file.absolutePath
         }.toList())
 
+        // How much time we should remove to make enough space for the intro
+        val durationBeforeAudioStart = generatedVideo.segmentsBeforeAudioStart * properties.segmentLength
+        val offsetTime =
+            (introLength - durationBeforeAudioStart - properties.audioPreludeDuration).coerceAtLeast(0.0)
+        val withAudio = cutter.replaceAudio(output, audioFile, offsetTime)
+
         // Clean up tmp files
         tmp.delete()
         concatenated.delete()
-        withAudio.delete()
+        output.delete()
 
-        return output
+        return withAudio
     }
 
-    fun checkCachedVersions(track: VideoTrack) {
+    fun generateTemplateVideo(track: VideoTrack) {
         val cacheDir = File(properties.cacheDirectory)
         val formattedFile = File(cacheDir, "${track.id}.mp4")
 
-        if (!formattedFile.exists() || !formattedFile.isFile) {
-            val original = File(properties.videoLibrary, track.fileName)
-            cutter.convertToH265FullHd60FPS(original, formattedFile)
+        val original = File(properties.videoLibrary, track.fileName)
+        cutter.convertToH264FullHd60FPS(original, formattedFile)
+
+        track.generatedTemplate = true
+        videoTrackRepository.save(track)
+    }
+
+    fun generateSegments(track: VideoTrack) {
+        Preconditions.checkState(track.generatedTemplate)
+        val cacheDir = File(properties.cacheDirectory)
+        val formattedFile = File(cacheDir, "${track.id}.mp4")
+        val segmentDir = File(cacheDir, track.id.toString())
+        segmentDir.mkdirs()
+
+        val startTime = if (track.start < properties.segmentLength) {
+            track.start
+        } else {
+            track.segmentsBeforeAudioStart = (track.start / properties.segmentLength.toDouble()).toInt()
+            track.start - track.segmentsBeforeAudioStart * properties.segmentLength
         }
 
-        val segmentDir = File(cacheDir, track.id.toString())
-        if (!segmentDir.exists() || !segmentDir.isDirectory) {
-            segmentDir.mkdirs()
-            val template = segmentDir.absolutePath + "/%d.mp4"
-            cutter.splitIntoSegments(formattedFile, template, properties.segmentLength, track.start)
-        }
+        val template = segmentDir.absolutePath + "/%d.mp4"
+        cutter.splitIntoSegments(formattedFile, template, properties.segmentLength, startTime)
+
+        track.generatedSegments = true
+        videoTrackRepository.save(track)
+    }
+
+    fun streamToYouTube(generatedFile: File) {
+        cutter.streamToYouTube(generatedFile, properties.youtubeStreamKey)
     }
 }

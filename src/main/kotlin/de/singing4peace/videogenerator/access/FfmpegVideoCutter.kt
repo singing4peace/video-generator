@@ -11,7 +11,6 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.math.floor
 
 
 @Component
@@ -25,6 +24,25 @@ class FfmpegVideoCutter : VideoCutter {
         val result = ffprobe.probe(inputFile.absolutePath)
 
         return result.format.duration
+    }
+
+    override fun cutFileFast(inputFile: File, outputFile: File, start: Long, duration: Long?, timeUnit: TimeUnit) {
+        val outputBuilder = FFmpegBuilder()
+            .setStartOffset(start, timeUnit)
+            .addInput(inputFile.absolutePath)
+            .addOutput(outputFile.absolutePath)
+            .addExtraArgs("-c", "copy")
+            .setStrict(FFmpegBuilder.Strict.NORMAL)
+
+        if (duration != null) {
+            outputBuilder.setDuration(duration, timeUnit)
+        }
+
+        val builder = outputBuilder.done()
+
+        val executor = FFmpegExecutor(ffmpeg, ffprobe)
+        val job = executor.createJob(builder)
+        job.run()
     }
 
     override fun cutFile(inputFile: File, outputFile: File, start: Long, duration: Long?, timeUnit: TimeUnit) {
@@ -65,13 +83,14 @@ class FfmpegVideoCutter : VideoCutter {
         }
     }
 
-    override fun convertToFormat(inputFile: File, outputFile: File, codec: String, resolution: String, fps: Int) {
+    override fun convertToFormat(inputFile: File, outputFile: File, codec: String, resolution: String, pixelFormat: String, fps: Int) {
         val builder = FFmpegBuilder()
             .addInput(inputFile.absolutePath)
             .addOutput(outputFile.absolutePath)
             .setVideoCodec(codec)
             .setVideoResolution(resolution)
             .setVideoFrameRate(fps, 1)
+            .addExtraArgs("-pix_fmt", pixelFormat)
             .setStrict(FFmpegBuilder.Strict.NORMAL).done()
 
         val executor = FFmpegExecutor(ffmpeg, ffprobe)
@@ -128,5 +147,36 @@ class FfmpegVideoCutter : VideoCutter {
         job.run()
 
         return output
+    }
+
+    override fun streamToYouTube(generatedFile: File, streamKey: String) {
+        "ffmpeg -re -i asdf.mp4 -c:v libx264 -b:v 2M -c:a copy -strict -2 -flags +global_header -bsf:a aac_adtstoasc -bufsize 2100k -f flv"
+
+        val builder = FFmpegBuilder()
+            .addExtraArgs("-re")
+            .addInput(generatedFile.absolutePath)
+            .addOutput("rtmp://a.rtmp.youtube.com/live2/$streamKey")
+            .addExtraArgs(
+                "-c:v",
+                "libx264",
+                "-b:v",
+                "2M",
+                "-c:a",
+                "copy",
+                "-strict",
+                "-2",
+                "-flags",
+                "+global_header",
+                "-bsf:a",
+                "aac_adtstoasc",
+                "-bufsize 2100k",
+                "-f",
+                "flv"
+            )
+            .done()
+
+        val executor = FFmpegExecutor(ffmpeg, ffprobe)
+        val job = executor.createJob(builder)
+        job.run()
     }
 }

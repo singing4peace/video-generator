@@ -6,18 +6,10 @@ import javax.persistence.*
 @Entity
 class GeneratedVideo(
     @Id
-    var id: String,
+    val id: String,
+    val segmentsBeforeAudioStart: Int,
     @OneToMany(cascade = [CascadeType.ALL])
-    var segments: List<VideoTrack>,
-)
-
-@Entity
-class CutVideoTrack(
-    var start: Long,
-    var length: Long,
-    @ManyToOne
-    var videoTrack: VideoTrack,
-    @Id @GeneratedValue var id: Long? = null
+    val segments: List<VideoTrack>,
 )
 
 @Entity
@@ -34,6 +26,9 @@ class VideoTrack(
     var start: Double,
     var fileName: String,
     var cameraAngle: CameraAngle,
+    var generatedTemplate: Boolean = false,
+    var generatedSegments: Boolean = false,
+    var segmentsBeforeAudioStart: Int,
     @ManyToOne
     var ensemble: Ensemble,
     @Id @GeneratedValue var id: Long? = null
