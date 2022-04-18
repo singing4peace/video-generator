@@ -150,7 +150,6 @@ class FfmpegVideoCutter : VideoCutter {
     }
 
     override fun streamToYouTube(generatedFile: File, streamKey: String) {
-        "ffmpeg -re -i asdf.mp4 -c:v libx264 -b:v 2M -c:a copy -strict -2 -flags +global_header -bsf:a aac_adtstoasc -bufsize 2100k -f flv"
 
         val builder = FFmpegBuilder()
             .addExtraArgs("-re")
@@ -169,7 +168,8 @@ class FfmpegVideoCutter : VideoCutter {
                 "+global_header",
                 "-bsf:a",
                 "aac_adtstoasc",
-                "-bufsize 2100k",
+                "-bufsize",
+                "2100k",
                 "-f",
                 "flv"
             )
