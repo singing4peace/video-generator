@@ -8,6 +8,6 @@ RUN apk add --no-cache ffmpeg
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 ARG JAR_FILE=target/video-generator.jar
-COPY --from=build /home/app/target/${JAR_FILE} app.jar
+COPY --from=build /home/app/${JAR_FILE} app.jar
 EXPOSE 8080
 ENTRYPOINT ["java","-jar","/app.jar"]

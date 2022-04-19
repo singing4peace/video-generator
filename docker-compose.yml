@@ -3,60 +3,59 @@ version: "3"
 services:
   database:
     image: postgres:14
+    ports:
+      - "5432:5432"
     volumes:
       - database:/data/postgres
     environment:
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
-      - POSTGRES_USER=${DATABASE_USER}
-      - POSTGRES_DB=${DATABASE_DB}
+      - POSTGRES_USER=main
+      - POSTGRES_DB=main
       - PGDATA=/data/postgres
 
-  cdn:
-    image: quay.io/minio/minio
-    command: server --json --address :9000 --console-address :9001 /data
+  reverse-proxy:
+    # The official v2 Traefik docker image
+    image: traefik:v2.6
+    # Enables the web UI and tells Traefik to listen to docker
+    command:
+      # Configure entrypoint
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.docker"
+      # SSL configuration
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=naegele_daniel@web.de"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      # Enable dashboard
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      - storage:/data
-    environment:
-      - MINIO_ROOT_USER=${STORAGE_USER}
-      - MINIO_ROOT_PASSWORD=${STORAGE_PASSWORD}
-      - MINIO_BROWSER_REDIRECT_URL=${STORAGE_CONSOLE_URL}
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      - traefik-certificates:/letsencrypt
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  website:
+    image: butzlabben/singing4peace-website:main
     labels:
-      - traefik.enable=true
-      # Configuration for minio
-      - traefik.http.routers.minio.service=minio
-      - traefik.http.routers.minio.rule=Host(`video.singing4peace.de`)
-      - traefik.http.services.minio.loadbalancer.server.port=9000
-      - traefik.http.routers.minio.tls=true
-      - traefik.http.routers.minio.tls.certresolver=myresolver
-      # Configuration for minio console
-      - traefik.http.routers.minio-console.service=minio-console
-      - traefik.http.routers.minio-console.rule=Host(`console.video.singing4peace.de`)
-      - traefik.http.services.minio-console.loadbalancer.server.port=9001
-      - traefik.http.routers.minio-console.tls=true
-      - traefik.http.routers.minio-console.tls.certresolver=myresolver
+      - "traefik.enable=true"
+      - "traefik.http.routers.website.rule=Host(`singing4peace.de`)"
+      - "traefik.http.routers.website.tls=true"
+      - "traefik.http.routers.website.tls.certresolver=myresolver"
 
   service:
     image: video-generator:latest
+    build: .
     environment:
-      - SPRING_SECURITY_USER_PASSWORD=${SPRING_MONITOR_PASSWORD}
-      - SPRING_DATASOURCE_USERNAME=${DATABASE_USER}
       - SPRING_DATASOURCE_PASSWORD=${DATABASE_PASSWORD}
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/${DATABASE_DB}
-      - SPRING_MINIO_PUBLICURL=${STORAGE_PUBLICURL}
-      - SPRING_MINIO_URL=http://cdn:9000
-      - SPRING_MINIO_BUCKET=${STORAGE_BUCKET}
-      - SPRING_MINIO_ACCESS-KEY=${STORAGE_USER}
-      - SPRING_MINIO_SECRET-KEY=${STORAGE_PASSWORD}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://database:5432/main
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.service.rule=Host(`api.singing4peace.de`)
-      - traefik.http.routers.service.tls=true
-      - traefik.http.routers.service.tls.certresolver=myresolver
+      - "traefik.enable=true"
+      - "traefik.http.routers.service.rule=Host(`api.singing4peace.de`)"
+      - "traefik.http.routers.service.tls=true"
+      - "traefik.http.routers.service.tls.certresolver=myresolver"
 
 volumes:
   database:
