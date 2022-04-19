@@ -2,6 +2,7 @@ package de.singing4peace.videogenerator.access
 
 import com.google.common.base.Preconditions
 import de.singing4peace.videogenerator.model.ApplicationProperties
+import de.singing4peace.videogenerator.model.CameraAngle
 import de.singing4peace.videogenerator.model.GeneratedVideo
 import de.singing4peace.videogenerator.model.VideoTrack
 import org.springframework.stereotype.Component
@@ -41,8 +42,6 @@ class VideoManager(
             for (i in 0 until neededSegmentsBefore) {
                 val trackIndex = Random.nextInt(0, potentialVideosBefore.size)
                 tracks.add(potentialVideosBefore[trackIndex])
-
-
             }
         }
 
@@ -52,8 +51,18 @@ class VideoManager(
             segmentsBeforeAudioStart = 0
         )
         for (i in 0 until neededSegmentsAfter) {
-            val trackIndex = Random.nextInt(0, potentialVideosAfter.size)
-            tracks.add(potentialVideosAfter[trackIndex])
+            // Make first shot a wide center shot
+            if (i == 0) {
+                val centerVideos = potentialVideosAfter.stream()
+                    .filter { it.cameraAngle == CameraAngle.WIDE_CENTER }
+                    .toList()
+
+                val trackIndex = Random.nextInt(0, centerVideos.size)
+                tracks.add(centerVideos[trackIndex])
+            } else {
+                val trackIndex = Random.nextInt(0, potentialVideosAfter.size)
+                tracks.add(potentialVideosAfter[trackIndex])
+            }
         }
 
 

@@ -35,5 +35,5 @@ class VideoTrack(
 )
 
 enum class CameraAngle {
-    WIDE_CENTER, WIDE_LEFT, WIDE_RIGHT, NEAR
+    WIDE_CENTER, WIDE_LEFT, WIDE_RIGHT, NEAR, UNDEFINED
 }

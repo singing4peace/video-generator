@@ -1,53 +1,30 @@
 package de.singing4peace.videogenerator.config
 
 import de.singing4peace.videogenerator.access.GeneratedVideoRepository
+import de.singing4peace.videogenerator.access.VideoCutter
 import de.singing4peace.videogenerator.access.VideoManager
-import de.singing4peace.videogenerator.model.GeneratedVideo
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import org.springframework.context.annotation.Bean
+import de.singing4peace.videogenerator.model.Message
+import de.singing4peace.videogenerator.model.StreamConsumer
+import de.singing4peace.videogenerator.model.VideoProducer
 import org.springframework.context.annotation.Configuration
-import java.io.File
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingDeque
 import javax.annotation.PostConstruct
 
 @Configuration
 class ServiceConfig(
     val videoManager: VideoManager,
-    val generatedVideoRepository: GeneratedVideoRepository
+    val cutter: VideoCutter,
 ) {
 
     @PostConstruct
     fun startYoutubeStream() {
-        Thread {
-            runBlocking {
-                val channel = Channel<File>(5)
+        val blockingQueue: BlockingQueue<Message> = LinkedBlockingDeque(5)
 
-                launch {
-                    while (true) {
-                        val generatedVideo = videoManager.gatherGeneratedVideo()
-                        println(generatedVideo.id)
-                        val generatedFile = videoManager.generateVideo(generatedVideo)
-                        channel.send(generatedFile)
-                    }
-                }
+        val videoProducer = VideoProducer(blockingQueue, videoManager)
+        Thread(videoProducer).start()
 
-                launch {
-                    while (true) {
-                        val generatedFile = channel.receive()
-                        println(generatedFile.absolutePath)
-                        videoManager.streamToYouTube(generatedFile)
-                        println("Stream file ${generatedFile.absolutePath}")
-                        withContext(Dispatchers.IO) {
-                            generatedFile.delete()
-                        }
-                    }
-                }
-            }
-        }.start()
-
-
+        val streamConsumer = StreamConsumer(blockingQueue, videoManager, cutter)
+        Thread(streamConsumer).start()
     }
 }
