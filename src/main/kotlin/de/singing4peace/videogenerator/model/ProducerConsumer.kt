@@ -37,7 +37,8 @@ class VideoProducer(private val blockingQueue: BlockingQueue<Message>, private v
 class StreamConsumer(
     private val blockingQueue: BlockingQueue<Message>,
     private val videoManager: VideoManager,
-    private val cutter: VideoCutter
+    private val cutter: VideoCutter,
+    private val waitBetweenStreams: Int
 ) : Runnable {
 
     @Volatile
@@ -56,7 +57,7 @@ class StreamConsumer(
             val length = cutter.getDurationOfFile(message.file)
             videoManager.streamToYouTube(message.file)
             message.file.delete()
-            val waitTime = (length * 1000 - (System.currentTimeMillis() - time)).coerceAtLeast(0.0)
+            val waitTime = (length * 1000 - (System.currentTimeMillis() - time)).coerceAtLeast(waitBetweenStreams.toDouble())
             if (waitTime > 0) {
                 Thread.sleep(waitTime.toLong())
             }
