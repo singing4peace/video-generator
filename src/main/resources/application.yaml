@@ -18,7 +18,7 @@ application:
   audio-prelude-duration: 7.8
   segment-length: 10
   outro-offset: -6
-  wait-between-streams: 10
+  wait-between-streams: 0
 
 
 management:

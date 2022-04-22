@@ -79,6 +79,7 @@ class VideoManager(
         val outroLength = cutter.getDurationOfFile(outroFile)
 
         val audioFile = File(properties.videoLibrary, properties.audioFileName)
+        val audioLength = cutter.getDurationOfFile(audioFile)
 
         assert(outroLength > -properties.outroOffset)
 
@@ -103,12 +104,19 @@ class VideoManager(
         val durationBeforeAudioStart = generatedVideo.segmentsBeforeAudioStart * properties.segmentLength
         val offsetTime =
             (introLength - durationBeforeAudioStart - properties.audioPreludeDuration).coerceAtLeast(0.0)
-        val withAudio = cutter.replaceAudio(output, audioFile, offsetTime)
+
+        // Add silence to video so that youtube does not stop our stream
+        val currentLength = cutter.getDurationOfFile(output)
+        val silence = currentLength - offsetTime - audioLength
+        val paddedAudio = cutter.addSilenceToAudio(audioFile, silence)
+
+        val withAudio = cutter.replaceAudio(output, paddedAudio, offsetTime)
 
         // Clean up tmp files
         tmp.delete()
         concatenated.delete()
         output.delete()
+        paddedAudio.delete()
 
         return withAudio
     }

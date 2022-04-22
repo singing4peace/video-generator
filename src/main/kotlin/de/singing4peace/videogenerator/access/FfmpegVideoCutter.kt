@@ -149,6 +149,22 @@ class FfmpegVideoCutter : VideoCutter {
         return output
     }
 
+    override fun addSilenceToAudio(audioFile: File, length: Double): File {
+        val output = File("/tmp", UUID.randomUUID().toString() + ".mp3")
+
+        val builder = FFmpegBuilder()
+            .addInput(audioFile.absolutePath)
+            .addOutput(output.absolutePath)
+            .setAudioFilter("apad=pad_dur=$length")
+            .setStrict(FFmpegBuilder.Strict.NORMAL).done()
+
+        val executor = FFmpegExecutor(ffmpeg, ffprobe)
+        val job = executor.createJob(builder)
+        job.run()
+
+        return output
+    }
+
     override fun streamToYouTube(generatedFile: File, streamKey: String) {
 
         val builder = FFmpegBuilder()
