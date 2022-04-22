@@ -21,7 +21,7 @@ class ServiceConfig(
 
     @PostConstruct
     fun startYoutubeStream() {
-        val blockingQueue: BlockingQueue<Message> = LinkedBlockingDeque(5)
+        val blockingQueue: BlockingQueue<Message> = LinkedBlockingDeque(2)
 
         val videoProducer = VideoProducer(blockingQueue, videoManager)
         Thread(videoProducer).start()
