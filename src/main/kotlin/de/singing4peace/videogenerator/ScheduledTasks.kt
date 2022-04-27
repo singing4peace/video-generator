@@ -24,8 +24,6 @@ class ScheduledTasks(
     val recordingRepository: RecordingRepository,
     val videoManager: VideoManager
 ) {
-
-    // @Scheduled(fixedRate = 3, timeUnit = TimeUnit.MINUTES)
     @Scheduled(cron = "0 0 3 * * *")
     fun checkVideos() {
         logger.info { "Generating missing videos templates" }
