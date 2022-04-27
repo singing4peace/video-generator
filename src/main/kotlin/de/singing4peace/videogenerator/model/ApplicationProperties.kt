@@ -8,6 +8,6 @@ import org.springframework.boot.context.properties.ConstructorBinding
 data class ApplicationProperties(
     val youtubeStreamKey: String, val audioFileName: String, val videoLibrary: String,
     val cacheDirectory: String, val introFileName: String, val outroFileName: String,
-    val segmentLength: Int, val outroOffset: Double,
+    val segmentLength: Int, val waitBetweenStreams: Int, val outroOffset: Double,
     val audioPreludeDuration: Double
 )

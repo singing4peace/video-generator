@@ -44,6 +44,8 @@ interface VideoCutter {
      */
     fun replaceAudio(videoFile: File, audioFile: File, offset: Double = 0.0): File
 
+    fun addSilenceToAudio(audioFile: File, length: Double): File
+
     /**
      * Converts an input file to a h264, 60fps, 1920x1080 resolution video and outputs it to the output file.
      */
