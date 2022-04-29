@@ -53,13 +53,18 @@ class StreamConsumer(
                 break
             }
 
-            val time = System.currentTimeMillis()
-            val length = cutter.getDurationOfFile(message.file)
-            videoManager.streamToYouTube(message.file)
-            message.file.delete()
-            val waitTime = (length * 1000 - (System.currentTimeMillis() - time)).coerceAtLeast(waitBetweenStreams.toDouble() * 1000)
-            if (waitTime > 0) {
-                Thread.sleep(waitTime.toLong())
+            try {
+                val time = System.currentTimeMillis()
+                val length = cutter.getDurationOfFile(message.file)
+                videoManager.streamToYouTube(message.file)
+                message.file.delete()
+                val waitTime = (length * 1000 - (System.currentTimeMillis() - time)).coerceAtLeast(waitBetweenStreams.toDouble() * 1000)
+                if (waitTime > 0) {
+                    Thread.sleep(waitTime.toLong())
+                }
+            } catch (e: Exception) {
+                // In case there are some crazy exceptions with livestreaming, just continue streaming so the stream never ends
+                e.printStackTrace()
             }
         }
     }
