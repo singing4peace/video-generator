@@ -26,6 +26,7 @@ class ScheduledTasks(
 ) {
 
     @Scheduled(fixedRate = 2, timeUnit = TimeUnit.HOURS)
+    @PostConstruct
     fun checkVideos() {
         logger.info { "Generating missing videos templates" }
         for (track in trackRepository.findAllByGeneratedTemplate(false)) {

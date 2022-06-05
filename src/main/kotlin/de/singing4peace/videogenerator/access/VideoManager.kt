@@ -45,12 +45,17 @@ class VideoManager(
             }
         }
 
-        val potentialVideosAfter = videoTrackRepository.findAllByGeneratedSegmentsAndGeneratedTemplateAndSegmentsBeforeAudioStartIsGreaterThanEqual(
+        var potentialVideosAfter = videoTrackRepository.findAllByGeneratedSegmentsAndGeneratedTemplateAndSegmentsBeforeAudioStartIsGreaterThanEqual(
             generatedSegments = true,
             generatedTemplate = true,
             segmentsBeforeAudioStart = 0
         )
         for (i in 0 until neededSegmentsAfter) {
+            // Remove all videos, which are not long enough
+            potentialVideosAfter = potentialVideosAfter.filter {
+                it.segmentsAfterAudioStart >= i
+            }
+
             // Make first shot a wide center shot
             if (i == 0) {
                 val centerVideos = potentialVideosAfter.stream()
@@ -145,6 +150,9 @@ class VideoManager(
             track.segmentsBeforeAudioStart = (track.start / properties.segmentLength.toDouble()).toInt()
             track.start - track.segmentsBeforeAudioStart * properties.segmentLength
         }
+
+        val length = cutter.getDurationOfFile(formattedFile)
+        track.segmentsAfterAudioStart = ((length - startTime) / properties.segmentLength.toDouble()).toInt()
 
         val template = segmentDir.absolutePath + "/%d.mp4"
         cutter.splitIntoSegments(formattedFile, template, properties.segmentLength, startTime)

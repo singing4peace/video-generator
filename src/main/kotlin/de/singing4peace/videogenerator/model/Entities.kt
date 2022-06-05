@@ -29,6 +29,8 @@ class VideoTrack(
     var generatedTemplate: Boolean = false,
     var generatedSegments: Boolean = false,
     var segmentsBeforeAudioStart: Int,
+    @Column(columnDefinition = "int4 NOT NULL DEFAULT 0")
+    var segmentsAfterAudioStart: Int,
     @ManyToOne
     var ensemble: Ensemble,
     @Id @GeneratedValue var id: Long? = null
